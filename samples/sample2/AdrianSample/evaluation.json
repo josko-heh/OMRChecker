@@ -1,10 +1,10 @@
 {
     "source_type": "csv",
     "options": {
-      "answer_key_csv_path": "answer_key-original.csv",
+      "answer_key_csv_path": "answer_key-multigroup.csv",
       "should_explain_scoring": true
     },
     "marking_scheme": {
-      "DEFAULT": { "correct": "1", "incorrect": "-3", "unmarked": "5" }
+      "DEFAULT": { "correct": "1", "incorrect": "0", "unmarked": "0" }
     }
   }

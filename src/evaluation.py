@@ -197,12 +197,13 @@ class EvaluationConfig:
                 answer_key = pd.read_csv(
                     csv_path,
                     header=None,
-                    names=["question", "answer"],
-                    converters={"question": str, "answer": self.parse_answer_column},
+                    names=["question", "answer1", "answer2"],
+                    converters={"question": str, "answer1": self.parse_answer_column, "answer2": self.parse_answer_column},
                 )
 
                 self.questions_in_order = answer_key["question"].to_list()
-                answers_in_order = answer_key["answer"].to_list()
+                answers1_in_order = answer_key["answer1"].to_list()
+                answers2_in_order = answer_key["answer2"].to_list()
             elif not answer_key_image_path:
                 raise Exception(f"Answer key csv not found at '{csv_path}'")
             else:
@@ -277,7 +278,8 @@ class EvaluationConfig:
             )
             answers_in_order = options["answers_in_order"]
 
-        self.validate_questions(answers_in_order)
+        self.validate_questions(answers1_in_order)
+        self.validate_questions(answers2_in_order)
 
         self.marking_scheme, self.question_to_scheme = {}, {}
         for section_key, section_scheme in marking_scheme.items():
@@ -295,9 +297,10 @@ class EvaluationConfig:
 
         self.validate_marking_scheme()
 
-        self.question_to_answer_matcher = self.parse_answers_and_map_questions(
-            answers_in_order
-        )
+        self.question_to_answer_matcher = []
+        self.question_to_answer_matcher.append(self.parse_answers_and_map_questions(answers1_in_order))
+        self.question_to_answer_matcher.append(self.parse_answers_and_map_questions(answers2_in_order))
+        
 
     # Externally called methods have higher abstraction level.
     def prepare_and_validate_omr_response(self, omr_response):
@@ -323,8 +326,11 @@ class EvaluationConfig:
                 f"No answer given for potential questions in OMR response: {missing_prefixed_questions}"
             )
 
-    def match_answer_for_question(self, current_score, question, marked_answer):
-        answer_matcher = self.question_to_answer_matcher[question]
+    def match_answer_for_question(self, current_score, question, marked_answer, groupNum):
+        """
+        groupNum - int : zero-based group index
+        """
+        answer_matcher = self.question_to_answer_matcher[groupNum][question]
         question_verdict, delta = answer_matcher.get_verdict_marking(marked_answer)
         self.conditionally_add_explanation(
             answer_matcher,
@@ -348,9 +354,7 @@ class EvaluationConfig:
 
     @staticmethod
     def parse_answer_column(answer_column):
-        if answer_column[0] == "[":
-            parsed_answer = ast.literal_eval(answer_column)
-        elif "," in answer_column:
+        if "," in answer_column:
             parsed_answer = answer_column.split(",")
         else:
             parsed_answer = answer_column
@@ -461,9 +465,7 @@ def evaluate_concatenated_response(concatenated_response, evaluation_config):
     current_score = 0.0
     for question in evaluation_config.questions_in_order:
         marked_answer = concatenated_response[question]
-        delta = evaluation_config.match_answer_for_question(
-            current_score, question, marked_answer
-        )
+        delta = evaluation_config.match_answer_for_question(current_score, question, marked_answer, 1)
         current_score += delta
 
     evaluation_config.conditionally_print_explanation()
