@@ -231,7 +231,8 @@ def process_files(
             response_dict,
             final_marked,
             multi_marked,
-            _,
+            _, 
+            groupNum
         ) = template.image_instance_ops.read_omr_response(
             template, image=in_omr, name=file_id, save_dir=save_dir
         )
@@ -248,7 +249,7 @@ def process_files(
 
         score = 0
         if evaluation_config is not None:
-            score = evaluate_concatenated_response(omr_response, evaluation_config)
+            score = evaluate_concatenated_response(omr_response, evaluation_config, groupNum)
             logger.info(
                 f"(/{files_counter}) Graded with score: {round(score, 2)}\t for file: '{file_id}'"
             )
@@ -268,7 +269,8 @@ def process_files(
 
         resp_array = []
         for k in template.output_columns:
-            resp_array.append(omr_response[k])
+            if k != 'grupa':
+                resp_array.append(omr_response[k])
 
         outputs_namespace.OUTPUT_SET.append([file_name] + resp_array)
 

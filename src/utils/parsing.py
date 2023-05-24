@@ -40,7 +40,8 @@ def get_concatenated_response(omr_response, template):
         concatenated_response[field_label] = custom_label
 
     for field_label in template.non_custom_labels:
-        concatenated_response[field_label] = omr_response[field_label]
+        if field_label != 'grupa':
+            concatenated_response[field_label] = omr_response[field_label]
 
     return concatenated_response
 

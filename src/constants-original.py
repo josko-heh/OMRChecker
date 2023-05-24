@@ -28,10 +28,6 @@ FIELD_TYPES = {
         "bubbleValues": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
         "direction": "vertical",
     },
-    "QTYPE_INT_V2": {
-        "bubbleValues": ["1", "2", "3", "4", "5", "6", "7", "8"],
-        "direction": "horizontal",
-    },
     "QTYPE_INT_FROM_1": {
         "bubbleValues": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
         "direction": "vertical",
@@ -39,10 +35,6 @@ FIELD_TYPES = {
     "QTYPE_MCQ4": {"bubbleValues": ["A", "B", "C", "D"], "direction": "horizontal"},
     "QTYPE_MCQ5": {
         "bubbleValues": ["A", "B", "C", "D", "E"],
-        "direction": "horizontal",
-    },
-    "QTYPE_MCQ6": {
-        "bubbleValues": ["A", "B", "C", "D", "E", "F"],
         "direction": "horizontal",
     },
     #

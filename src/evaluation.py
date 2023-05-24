@@ -230,6 +230,7 @@ class EvaluationConfig:
                     _final_marked,
                     _multi_marked,
                     _multi_roll,
+                    _
                 ) = template.image_instance_ops.read_omr_response(
                     template,
                     image=in_omr,
@@ -328,9 +329,9 @@ class EvaluationConfig:
 
     def match_answer_for_question(self, current_score, question, marked_answer, groupNum):
         """
-        groupNum - int : zero-based group index
+        groupNum - int : one-based group index
         """
-        answer_matcher = self.question_to_answer_matcher[groupNum][question]
+        answer_matcher = self.question_to_answer_matcher[groupNum-1][question]
         question_verdict, delta = answer_matcher.get_verdict_marking(marked_answer)
         self.conditionally_add_explanation(
             answer_matcher,
@@ -460,12 +461,12 @@ class EvaluationConfig:
             self.explanation_table.add_row(*row)
 
 
-def evaluate_concatenated_response(concatenated_response, evaluation_config):
+def evaluate_concatenated_response(concatenated_response, evaluation_config, groupNum):
     evaluation_config.prepare_and_validate_omr_response(concatenated_response)
     current_score = 0.0
     for question in evaluation_config.questions_in_order:
         marked_answer = concatenated_response[question]
-        delta = evaluation_config.match_answer_for_question(current_score, question, marked_answer, 1)
+        delta = evaluation_config.match_answer_for_question(current_score, question, marked_answer, groupNum)
         current_score += delta
 
     evaluation_config.conditionally_print_explanation()

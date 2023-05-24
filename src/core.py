@@ -37,6 +37,10 @@ class ImageInstanceOps:
         return in_omr
 
     def read_omr_response(self, template, image, name, save_dir=None):
+        """
+        Returns:
+            groupNum - int : one-based group index
+        """
         config = self.tuning_config
         auto_align = config.alignment_params.auto_align
         try:
@@ -341,16 +345,21 @@ class ImageInstanceOps:
                             bubble.field_label,
                             bubble.field_value,
                         )
-                        # Only send rolls multi-marked in the directory
-                        multi_marked_local = field_label in omr_response
-                        omr_response[field_label] = (
-                            (omr_response[field_label] + field_value)
-                            if multi_marked_local
-                            else field_value
-                        )
-                        # TODO: generalize this into identifier
-                        # multi_roll = multi_marked_local and "Roll" in str(q)
-                        multi_marked = multi_marked or multi_marked_local
+
+                        # Special case for 'grupa' -> determines the group of questions contained in detected_bubbles
+                        if field_label == 'grupa':
+                            groupNum = int(field_value)
+                        else: 
+                            # Only send rolls multi-marked in the directory
+                            multi_marked_local = field_label in omr_response
+                            omr_response[field_label] = (
+                                (omr_response[field_label] + field_value)
+                                if multi_marked_local
+                                else field_value
+                            )
+                            # TODO: generalize this into identifier
+                            # multi_roll = multi_marked_local and "Roll" in str(q)
+                            multi_marked = multi_marked or multi_marked_local
 
                     if len(detected_bubbles) == 0:
                         field_label = field_block_bubbles[0].field_label
@@ -419,7 +428,7 @@ class ImageInstanceOps:
                 for i in range(config.outputs.save_image_level):
                     self.save_image_stacks(i + 1, name, save_dir)
 
-            return omr_response, final_marked, multi_marked, multi_roll
+            return omr_response, final_marked, multi_marked, multi_roll, groupNum
 
         except Exception as e:
             raise e
