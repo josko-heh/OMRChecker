@@ -234,8 +234,7 @@ def process_files(
             _, 
             groupNum
         ) = template.image_instance_ops.read_omr_response(
-            template, image=in_omr, name=file_id, save_dir=save_dir
-        )
+                template, image=in_omr, name=file_id, save_dir=save_dir)
 
         # TODO: move inner try catch here
         # concatenate roll nos, set unmarked responses, etc
@@ -278,7 +277,7 @@ def process_files(
             STATS.files_not_moved += 1
             new_file_path = save_dir.joinpath(file_id)
             # Enter into Results sheet-
-            results_line = [file_name, file_path, new_file_path, score] + resp_array
+            results_line = [file_name, file_path, new_file_path, score, groupNum] + resp_array
             # Write/Append to results_line file(opened in append mode)
             pd.DataFrame(results_line, dtype=str).T.to_csv(
                 outputs_namespace.files_obj["Results"],

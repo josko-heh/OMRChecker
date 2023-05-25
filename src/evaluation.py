@@ -194,93 +194,41 @@ class EvaluationConfig:
             answer_key_image_path = options.get("answer_key_image_path", None)
             if os.path.exists(csv_path):
                 # TODO: CSV parsing/validation for each row with a (qNo, <ans string/>) pair
+
+                num_groups = 3
+                answer_groups = []
+                converters = {}
+                for i in range(1, num_groups + 1):
+                    group_name = "group{}_answer".format(i)
+                    answer_groups.append(group_name)
+                    converters[group_name] = self.parse_answer_column
+
                 answer_key = pd.read_csv(
                     csv_path,
                     header=None,
-                    names=["question", "answer1", "answer2"],
-                    converters={"question": str, "answer1": self.parse_answer_column, "answer2": self.parse_answer_column},
+                    names=["question"] + answer_groups,
+                    converters={"question": str}.update(converters),
                 )
 
                 self.questions_in_order = answer_key["question"].to_list()
-                answers1_in_order = answer_key["answer1"].to_list()
-                answers2_in_order = answer_key["answer2"].to_list()
+
+                groups_and_answers_in_order = [] # groups and their answers
+                for i in range(1, num_groups + 1):
+                    group_name = "group{}_answer".format(i)
+                    group_answers = answer_key[group_name].to_list()
+                    groups_and_answers_in_order.append(group_answers)
             elif not answer_key_image_path:
                 raise Exception(f"Answer key csv not found at '{csv_path}'")
             else:
-                image_path = str(curr_dir.joinpath(answer_key_image_path))
-                if not os.path.exists(image_path):
-                    raise Exception(f"Answer key image not found at '{image_path}'")
-
-                # self.exclude_files.append(image_path)
-
-                logger.debug(
-                    f"Attempting to generate answer key from image: '{image_path}'"
-                )
-                # TODO: use a common function for below changes?
-                in_omr = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-                in_omr = template.image_instance_ops.apply_preprocessors(
-                    image_path, in_omr, template
-                )
-                if in_omr is None:
-                    raise Exception(
-                        f"Could not read answer key from image {image_path}"
-                    )
-                (
-                    response_dict,
-                    _final_marked,
-                    _multi_marked,
-                    _multi_roll,
-                    _
-                ) = template.image_instance_ops.read_omr_response(
-                    template,
-                    image=in_omr,
-                    name=image_path,
-                    save_dir=None,
-                )
-                omr_response = get_concatenated_response(response_dict, template)
-
-                empty_val = template.global_empty_val
-                empty_answer_regex = (
-                    rf"{re.escape(empty_val)}+" if empty_val != "" else r"^$"
-                )
-
-                if "questions_in_order" in options:
-                    self.questions_in_order = self.parse_questions_in_order(
-                        options["questions_in_order"]
-                    )
-                    empty_answered_questions = [
-                        question
-                        for question in self.questions_in_order
-                        if re.search(empty_answer_regex, omr_response[question])
-                    ]
-                    if len(empty_answered_questions) > 0:
-                        logger.error(
-                            f"Found empty answers for questions: {empty_answered_questions}, empty value used: '{empty_val}'"
-                        )
-                        raise Exception(
-                            f"Found empty answers in file '{image_path}'. Please check your template again in the --setLayout mode."
-                        )
-                else:
-                    logger.warning(
-                        f"questions_in_order not provided, proceeding to use non-empty values as answer key"
-                    )
-                    self.questions_in_order = sorted(
-                        question
-                        for (question, answer) in omr_response.items()
-                        if not re.search(empty_answer_regex, answer)
-                    )
-                answers_in_order = [
-                    omr_response[question] for question in self.questions_in_order
-                ]
-                # TODO: save the CSV
+                # currently not supported
+                raise Exception('Provide answer_key_csv_path.')
         else:
-            self.questions_in_order = self.parse_questions_in_order(
-                options["questions_in_order"]
-            )
-            answers_in_order = options["answers_in_order"]
+            # currently not supported
+            raise Exception('Only csv is supported as source_type.')
 
-        self.validate_questions(answers1_in_order)
-        self.validate_questions(answers2_in_order)
+        for answers_in_order in groups_and_answers_in_order:
+            self.validate_questions(answers_in_order)
+
 
         self.marking_scheme, self.question_to_scheme = {}, {}
         for section_key, section_scheme in marking_scheme.items():
@@ -299,8 +247,8 @@ class EvaluationConfig:
         self.validate_marking_scheme()
 
         self.question_to_answer_matcher = []
-        self.question_to_answer_matcher.append(self.parse_answers_and_map_questions(answers1_in_order))
-        self.question_to_answer_matcher.append(self.parse_answers_and_map_questions(answers2_in_order))
+        for answers_in_order in groups_and_answers_in_order:
+            self.question_to_answer_matcher.append(self.parse_answers_and_map_questions(answers_in_order))
         
 
     # Externally called methods have higher abstraction level.
